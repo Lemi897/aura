@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AURA</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Syne:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+
+:root {
+  --ink: #06030F;
+  --void: #0A0514;
+  --panel: rgba(255,255,255,0.04);
+  --rim: rgba(255,255,255,0.08);
+  --frost: rgba(255,255,255,0.06);
+  --txt: #F5F0FF;
+  --dim: rgba(245,240,255,0.45);
+  --ghost: rgba(245,240,255,0.2);
+
+  /* Mode colors */
+  --spark: #4FC3F7;
+  --glow: #CE93D8;
+  --open: #FFCC02;
+  --hot: #FF6B6B;
+  --lime: #A8FF78;
+
+  --mode-color: #CE93D8;
+  --mode-glow: rgba(206,147,216,0.3);
+}
+
+html, body {
+  height: 100%;
+  background: #030108;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: 'Syne', sans-serif;
+}
+
+/* ─── PHONE SHELL ─── */
+.phone {
+  width: 390px;
+  height: 844px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 52px;
+  background: var(--void);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.06),
+    0 0 120px rgba(206,147,216,0.12),
+    0 60px 160px rgba(0,0,0,0.9);
+}
+
+@media (max-width:420px) {
+  html,body { align-items:flex-start; }
+  .phone { width:100vw; height:100dvh; border-radius:0; box-shadow:none; }
+}
+
+/* ─── LIVING BACKGROUND ─── */
+.living-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  mix-blend-mode: screen;
+  animation: blobFloat linear infinite;
+  opacity: 0.5;
+}
+
+.bg-blob:nth-child(1) { width:280px; height:280px; background:var(--mode-color); top:-10%; left:-20%; animation-duration:12s; animation-delay:0s; opacity:0.18; }
+.bg-blob:nth-child(2) { width:200px; height:200px; background:var(--hot); bottom:10%; right:-15%; animation-duration:9s; animation-delay:-3s; opacity:0.12; }
+.bg-blob:nth-child(3) { width:160px; height:160px; background:var(--open); top:40%; left:50%; animation-duration:14s; animation-delay:-7s; opacity:0.08; }
+
+@keyframes blobFloat {
+  0%   { transform: translate(0,0) scale(1) rotate(0deg); }
+  25%  { transform: translate(30px,-20px) scale(1.1) rotate(90deg); }
+  50%  { transform: translate(-15px,30px) scale(0.95) rotate(180deg); }
+  75%  { transform: translate(-30px,-10px) scale(1.05) rotate(270deg); }
+  100% { transform: translate(0,0) scale(1) rotate(360deg); }
+}
+
+/* Noise grain overlay */
+.grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 150px;
+}
+
+/* ─── SCREENS ─── */
+.screen {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1), transform 0.5s cubic-bezier(0.4,0,0.2,1);
+  transform: translateY(24px);
+  overflow: hidden;
+}
+.screen.active { opacity:1; pointer-events:all; transform:translateY(0); }
+.screen.exit { opacity:0; transform:translateY(-24px); }
+
+/* ─── STATUS BAR ─── */
+.status-bar {
+  padding: 14px 28px 0;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ghost);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════
+   SCREEN 1 — WELCOME
+═══════════════════════════════════ */
+#s-welcome {
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 50px;
+}
+
+.welcome-top { 
+  text-align: center;
+  padding: 60px 32px 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* AURA RING — the signature visual */
+.aura-ring-wrap {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin: 0 auto 40px;
+}
+
+.aura-ring {
+  position: absolute;
+  border-radius: 50%;
+  animation: ringPulse ease-in-out infinite;
+}
+
+.ring-1 { inset:0; border: 1.5px solid rgba(206,147,216,0.7); animation-duration:3s; }
+.ring-2 { inset:-16px; border: 1px solid rgba(206,147,216,0.35); animation-duration:3s; animation-delay:0.4s; }
+.ring-3 { inset:-34px; border: 1px solid rgba(206,147,216,0.15); animation-duration:3s; animation-delay:0.8s; }
+.ring-4 { inset:-56px; border: 0.5px solid rgba(206,147,216,0.07); animation-duration:3s; animation-delay:1.2s; }
+
+@keyframes ringPulse {
+  0%,100% { transform:scale(1); opacity:1; }
+  50% { transform:scale(1.04); opacity:0.6; }
+}
+
+.aura-core {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #E0C4FF, #9333EA 50%, #4A0E8F);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72px;
+  box-shadow: 0 0 60px rgba(147,51,234,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+  overflow: hidden;
+}
+
+.aura-core::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  left: -30%;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(circle, rgba(255,255,255,0.25), transparent 70%);
+  border-radius: 50%;
+}
+
+.logo-wordmark {
+  font-family: 'Playfair Display', serif;
+  font-size: 58px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #F5F0FF 0%, #CE93D8 40%, #FF6B6B 70%, #FFCC02 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo-sub {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--ghost);
+  margin-bottom: 36px;
+}
+
+.welcome-manifesto {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--dim);
+  max-width: 280px;
+  text-align: center;
+}
+
+.welcome-manifesto strong {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--txt);
+  -webkit-text-fill-color: var(--txt);
+}
+
+.welcome-bottom { 
+  width: 100%;
+  padding: 0 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ─── BUTTONS ─── */
+.btn-aura {
+  width: 100%;
+  padding: 19px 24px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-aura:active { transform: scale(0.97); }
+
+.btn-aura.primary {
+  background: linear-gradient(135deg, #9333EA, #CE93D8 60%, #FF6B6B);
+  color: white;
+  box-shadow: 0 8px 32px rgba(147,51,234,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.btn-aura.primary::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer { to { left: 200%; } }
+
+.btn-aura.ghost {
+  background: var(--panel);
+  color: var(--dim);
+  border: 1px solid var(--rim);
+}
+
+/* ═══════════════════════════════════
+   SCREEN 2 — SIGN UP
+═══════════════════════════════════ */
+#s-signup { padding: 0 28px 40px; }
+
+.top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 60px 0 32px;
+}
+
+.back-ico {
+  width: 42px; height: 42px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--rim);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 18px; color: var(--dim);
+  transition: all 0.2s;
+}
+.back-ico:active { background: var(--frost); transform: scale(0.95); }
+
+.step-pills { display: flex; gap: 5px; }
+.pill { height: 4px; width: 28px; border-radius: 2px; background: var(--rim); transition: all 0.4s; }
+.pill.on { background: var(--mode-color); width: 40px; }
+.pill.done { background: rgba(206,147,216,0.4); }
+
+.page-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 6px;
+  color: var(--txt);
+}
+.page-title em { font-style: italic; color: var(--mode-color); }
+.page-hint { font-size: 13px; color: var(--ghost); font-weight: 400; margin-bottom: 32px; }
+
+.social-row { display: flex; gap: 10px; margin-bottom: 8px; }
+
+.social-tile {
+  flex: 1;
+  padding: 16px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--rim);
+  background: var(--panel);
+  color: var(--txt);
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.social-tile:active { background: var(--frost); transform: scale(0.97); }
+
+.sep {
+  display: flex; align-items: center; gap: 14px;
+  margin: 20px 0; color: var(--ghost); font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.sep::before, .sep::after { content:''; flex:1; height:1px; background:var(--rim); }
+
+.field-wrap { margin-bottom: 14px; }
+.field-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ghost); margin-bottom: 8px; display: block; font-weight: 600; }
+
+.field {
+  width: 100%;
+  padding: 17px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--rim);
+  background: var(--panel);
+  color: var(--txt);
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.field:focus { border-color: rgba(206,147,216,0.5); box-shadow: 0 0 0 3px rgba(206,147,216,0.08); }
+.field::placeholder { color: var(--ghost); }
+
+/* ═══════════════════════════════════
+   SCREEN 3 — MODE SELECT
+═══════════════════════════════════ */
+#s-mode { padding: 0 24px 40px; overflow-y: auto; }
+
+.mode-arena { 
+  display: flex; flex-direction: column; gap: 12px; margin-top: 24px; 
+}
+
+.mode-tile {
+  position: relative;
+  border-radius: 24px;
+  border: 1px solid var(--rim);
+  background: var(--panel);
+  padding: 24px 24px 20px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.mode-tile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.mode-tile.spark-tile::before { background: radial-gradient(ellipse at 0% 50%, rgba(79,195,247,0.12), transparent 60%); }
+.mode-tile.glow-tile::before { background: radial-gradient(ellipse at 0% 50%, rgba(206,147,216,0.15), transparent 60%); }
+.mode-tile.open-tile::before { background: radial-gradient(ellipse at 0% 50%, rgba(255,204,2,0.1), rgba(255,107,107,0.08), transparent 60%); }
+
+.mode-tile:active, .mode-tile.picked { transform: scale(0.99); border-color: rgba(206,147,216,0.4); }
+.mode-tile:active::before, .mode-tile.picked::before { opacity: 1; }
+
+.mode-tile.picked { box-shadow: 0 0 40px rgba(206,147,216,0.1); }
+
+.tile-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+
+.tile-icon {
+  width: 52px; height: 52px;
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  position: relative;
+}
+
+.spark-tile .tile-icon { background: rgba(79,195,247,0.12); }
+.glow-tile .tile-icon { background: rgba(206,147,216,0.12); }
+.open-tile .tile-icon { background: rgba(255,204,2,0.1); }
+
+.tile-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 20px;
+  margin-top: 6px;
+}
+.spark-tile .tile-badge { background: rgba(79,195,247,0.12); color: var(--spark); }
+.glow-tile .tile-badge { background: rgba(206,147,216,0.12); color: var(--glow); }
+.open-tile .tile-badge { background: rgba(255,204,2,0.1); color: var(--open); }
+
+.tile-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.spark-tile .tile-name { color: var(--spark); }
+.glow-tile .tile-name { color: var(--glow); }
+.open-tile .tile-name { color: var(--open); }
+
+.tile-desc { font-size: 13px; color: var(--dim); line-height: 1.6; font-weight: 400; }
+
+.tile-features {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px;
+}
+.t-feat {
+  font-size: 11px; color: var(--ghost); background: var(--frost);
+  padding: 4px 10px; border-radius: 20px; border: 1px solid var(--rim);
+}
+
+.mode-safe { 
+  text-align: center; font-size: 12px; color: var(--ghost); 
+  margin-top: 16px; padding: 12px 20px;
+  background: var(--panel); border-radius: 14px; border: 1px solid var(--rim);
+}
+
+/* ═══════════════════════════════════
+   SCREEN 4 — PROFILE BUILD
+═══════════════════════════════════ */
+#s-profile { padding: 0 28px 40px; overflow-y: auto; }
+
+.avatar-stage {
+  display: flex; justify-content: center; margin: 28px 0 32px;
+  position: relative;
+}
+
+.avatar-ring-wrap {
+  position: relative; width: 120px; height: 120px;
+}
+
+.av-ring {
+  position: absolute; border-radius: 50%;
+  animation: ringPulse 3s ease-in-out infinite;
+}
+.av-ring-1 { inset:0; border:2px solid rgba(206,147,216,0.6); }
+.av-ring-2 { inset:-12px; border:1px solid rgba(206,147,216,0.25); animation-delay:0.4s; }
+.av-ring-3 { inset:-26px; border:0.5px solid rgba(206,147,216,0.1); animation-delay:0.8s; }
+
+.av-core {
+  position: absolute; inset:0; border-radius:50%;
+  background: radial-gradient(circle at 40% 35%, #E0C4FF, #9333EA 50%, #4A0E8F);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 14px; cursor: pointer; gap: 4px;
+  box-shadow: 0 0 40px rgba(147,51,234,0.4);
+  transition: transform 0.2s;
+  overflow: hidden;
+}
+.av-core:active { transform: scale(0.95); }
+.av-core .av-emoji { font-size: 36px; }
+.av-core .av-label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.7); font-weight: 600; }
+
+.identity-chips {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px;
+}
+.id-chip {
+  padding: 9px 16px; border-radius: 24px;
+  border: 1px solid var(--rim); background: var(--panel);
+  font-size: 13px; cursor: pointer; color: var(--dim);
+  transition: all 0.2s; font-weight: 400;
+}
+.id-chip.on { border-color: rgba(206,147,216,0.5); background: rgba(206,147,216,0.08); color: var(--glow); }
+.id-chip:active { transform: scale(0.96); }
+
+/* ═══════════════════════════════════
+   SCREEN 5 — VIBE
+═══════════════════════════════════ */
+#s-vibe { padding: 0 28px 40px; }
+
+.vibe-mosaic {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.vibe-brick {
+  border-radius: 20px;
+  border: 1px solid var(--rim);
+  background: var(--panel);
+  padding: 20px 16px;
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: 10px; transition: all 0.2s;
+  position: relative; overflow: hidden;
+}
+.vibe-brick:nth-child(1) { grid-column: span 2; flex-direction: row; align-items: center; padding: 18px 20px; }
+.vibe-brick .v-emoji { font-size: 28px; }
+.vibe-brick .v-label { font-size: 13px; font-weight: 600; color: var(--dim); }
+.vibe-brick .v-sub { font-size: 11px; color: var(--ghost); font-weight: 400; }
+.vibe-brick:nth-child(1) .v-text { flex: 1; }
+
+.vibe-brick.on { border-color: rgba(206,147,216,0.45); background: rgba(206,147,216,0.06); }
+.vibe-brick.on .v-label { color: var(--txt); }
+.vibe-brick.on::after { content:'✓'; position:absolute; top:12px; right:14px; font-size:13px; color:var(--glow); font-weight:700; }
+.vibe-brick:nth-child(1).on::after { top:50%; transform:translateY(-50%); right:18px; }
+.vibe-brick:active { transform: scale(0.97); }
+
+/* ═══════════════════════════════════
+   SCREEN 6 — SUCCESS
+═══════════════════════════════════ */
+#s-success {
+  align-items: center; justify-content: center; text-align: center; padding: 40px 32px;
+}
+
+.success-ring-wrap {
+  position: relative; width: 200px; height: 200px; margin: 0 auto 40px;
+}
+.s-ring { position:absolute; border-radius:50%; }
+.s-ring-1 { inset:0; border:2px solid rgba(206,147,216,0.8); animation:ringPulse 2s ease-in-out infinite; }
+.s-ring-2 { inset:-18px; border:1px solid rgba(255,107,107,0.4); animation:ringPulse 2s ease-in-out infinite; animation-delay:0.3s; }
+.s-ring-3 { inset:-38px; border:1px solid rgba(255,204,2,0.2); animation:ringPulse 2s ease-in-out infinite; animation-delay:0.6s; }
+.s-ring-4 { inset:-62px; border:0.5px solid rgba(206,147,216,0.1); animation:ringPulse 2s ease-in-out infinite; animation-delay:0.9s; }
+
+.s-core {
+  position:absolute; inset:0; border-radius:50%;
+  background: radial-gradient(circle at 40% 35%, #FFE0F0, #FF6B6B 40%, #9333EA);
+  display:flex; align-items:center; justify-content:center;
+  font-size:80px;
+  box-shadow: 0 0 80px rgba(255,107,107,0.4), 0 0 40px rgba(147,51,234,0.3);
+  animation: successBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+@keyframes successBounce {
+  0% { transform:scale(0) rotate(-20deg); opacity:0; }
+  60% { transform:scale(1.1) rotate(5deg); }
+  100% { transform:scale(1) rotate(0); opacity:1; }
+}
+
+.success-headline {
+  font-family: 'Playfair Display', serif;
+  font-size: 48px; font-weight: 900; font-style: italic;
+  line-height: 1.1; margin-bottom: 14px;
+  background: linear-gradient(135deg, #F5F0FF, #CE93D8 40%, #FF6B6B 70%, #FFCC02);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: fadeUp 0.5s ease 0.3s both;
+}
+
+.success-body {
+  font-size: 15px; color: var(--dim); line-height: 1.7; margin-bottom: 48px;
+  font-weight: 400; animation: fadeUp 0.5s ease 0.5s both;
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(16px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* ═══════════════════════════════════
+   SCREEN 7 — MAIN APP
+═══════════════════════════════════ */
+#s-main { display:flex; flex-direction:column; }
+
+.app-bar {
+  padding: 50px 24px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+  position: relative; z-index: 10;
+}
+
+.app-wordmark {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px; font-weight: 900; font-style: italic;
+  background: linear-gradient(135deg, #CE93D8, #FF6B6B);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+.app-mode-pill {
+  padding: 7px 14px; border-radius: 20px;
+  background: rgba(206,147,216,0.12); border: 1px solid rgba(206,147,216,0.25);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--glow);
+}
+
+.hdr-btns { display:flex; gap:10px; }
+
+.hdr-btn {
+  width: 40px; height: 40px; border-radius: 13px;
+  background: var(--panel); border: 1px solid var(--rim);
+  display:flex; align-items:center; justify-content:center;
+  font-size:17px; cursor:pointer; transition:all 0.2s; position:relative;
+}
+.hdr-btn:active { background:var(--frost); transform:scale(0.93); }
+.hdr-badge {
+  position:absolute; top:-4px; right:-4px;
+  width:16px; height:16px; border-radius:50%;
+  background:var(--hot); font-size:9px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  color:white; border:2px solid var(--void);
+}
+
+/* DISCOVER AREA */
+.discover-area {
+  flex: 1; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px 18px 0;
+}
+
+/* Profile orbit — completely unique layout */
+.profile-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* The main featured profile */
+.featured-profile {
+  position: relative;
+  width: 320px;
+  border-radius: 32px;
+  overflow: hidden;
+  cursor: grab;
+  transition: transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94);
+  touch-action: none;
+}
+.featured-profile:active { cursor:grabbing; }
+
+.fp-photo {
+  width: 100%;
+  height: 360px;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+
+.fp-photo-bg {
+  position: absolute; inset: 0;
+  transition: opacity 0.5s;
+}
+
+.fp-emoji-big {
+  font-size: 120px;
+  position: relative; z-index: 2;
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,0.5));
+  animation: profileFloat 4s ease-in-out infinite;
+}
+
+@keyframes profileFloat {
+  0%,100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+/* Aura rings around profile photo */
+.fp-aura {
+  position: absolute; inset: -20px;
+  border-radius: 40px;
+  pointer-events: none;
+}
+.fp-aura::before, .fp-aura::after {
+  content:''; position:absolute; border-radius: inherit;
+  animation: auraBreath 3s ease-in-out infinite;
+}
+.fp-aura::before {
+  inset: 0;
+  border: 1.5px solid rgba(206,147,216,0.5);
+}
+.fp-aura::after {
+  inset: -14px;
+  border: 1px solid rgba(206,147,216,0.2);
+  animation-delay: 0.5s;
+}
+
+@keyframes auraBreath {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:0.4; transform:scale(1.02); }
+}
+
+.fp-gradient {
+  position:absolute; inset:0;
+  background: linear-gradient(to top, rgba(6,3,15,0.95) 0%, rgba(6,3,15,0.3) 50%, transparent 100%);
+}
+
+.fp-like-stamp, .fp-nope-stamp {
+  position:absolute; top:28px; border-radius:10px;
+  font-size:18px; font-weight:900; letter-spacing:0.12em;
+  padding:8px 20px; opacity:0; transition:opacity 0.15s;
+  border:3px solid; pointer-events:none; z-index:20;
+}
+.fp-like-stamp { left:20px; color:#A8FF78; border-color:#A8FF78; transform:rotate(-12deg); }
+.fp-nope-stamp { right:20px; color:var(--hot); border-color:var(--hot); transform:rotate(12deg); }
+
+.fp-info {
+  position:absolute; bottom:0; left:0; right:0; padding:24px 22px 20px;
+  z-index:10;
+}
+
+.fp-name-row {
+  display:flex; align-items:baseline; gap:10px; margin-bottom:4px;
+}
+.fp-name {
+  font-family:'Playfair Display',serif; font-size:30px; font-weight:700; color:white;
+}
+.fp-age { font-size:18px; font-weight:300; color:rgba(255,255,255,0.7); }
+
+.fp-location { font-size:12px; color:rgba(255,255,255,0.55); margin-bottom:14px; font-weight:400; }
+
+.fp-tags { display:flex; gap:7px; flex-wrap:wrap; }
+.fp-tag {
+  font-size:11px; padding:5px 13px; border-radius:20px;
+  background:rgba(255,255,255,0.1); backdrop-filter:blur(10px);
+  color:rgba(255,255,255,0.85); border:1px solid rgba(255,255,255,0.12);
+  font-weight:500;
+}
+
+.fp-compatibility {
+  position:absolute; top:18px; left:18px; z-index:20;
+  display:flex; flex-direction:column; align-items:center;
+  background:rgba(6,3,15,0.7); backdrop-filter:blur(12px);
+  border:1px solid var(--rim); border-radius:16px; padding:10px 14px;
+}
+.compat-num {
+  font-family:'Playfair Display',serif; font-size:22px; font-weight:900;
+  color:#A8FF78; line-height:1;
+}
+.compat-label { font-size:9px; letter-spacing:0.15em; text-transform:uppercase; color:var(--ghost); margin-top:2px; }
+
+/* Queue cards */
+.queue-cards {
+  position: absolute;
+  bottom: -10px; right: -8px;
+  display: flex; gap: 8px;
+}
+.q-card {
+  width: 68px; height: 88px; border-radius: 18px;
+  border: 1px solid var(--rim);
+  display:flex; align-items:center; justify-content:center;
+  font-size:32px; overflow:hidden; position:relative;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.q-card:nth-child(1) { transform:rotate(6deg) translateY(-4px); z-index:2; }
+.q-card:nth-child(2) { transform:rotate(10deg) translateY(2px); z-index:1; }
+.q-card-bg { position:absolute; inset:0; }
+
+/* ─── ACTION ROW ─── */
+.action-strip {
+  padding: 16px 28px 10px;
+  display:flex; align-items:center; justify-content:center; gap:14px;
+}
+
+.act-btn {
+  border-radius:50%; border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:transform 0.15s ease, box-shadow 0.15s ease;
+  position:relative; overflow:hidden;
+}
+.act-btn:active { transform:scale(0.88) !important; }
+
+.act-pass {
+  width:58px; height:58px; font-size:22px;
+  background:var(--panel); border:1px solid var(--rim);
+  box-shadow:0 4px 16px rgba(0,0,0,0.3);
+}
+.act-like {
+  width:76px; height:76px; font-size:28px;
+  background:linear-gradient(135deg, #9333EA, #CE93D8);
+  box-shadow:0 8px 32px rgba(147,51,234,0.5);
+}
+.act-star {
+  width:58px; height:58px; font-size:22px;
+  background:linear-gradient(135deg, #F59E0B, #FFCC02);
+  box-shadow:0 4px 20px rgba(245,158,11,0.4);
+}
+.act-boost {
+  width:48px; height:48px; font-size:18px;
+  background:linear-gradient(135deg, #FF6B6B, #FF8E8E);
+  box-shadow:0 4px 16px rgba(255,107,107,0.4);
+}
+
+/* Particle burst */
+.particle {
+  position:absolute; border-radius:50%; pointer-events:none;
+  animation:burst 0.5s ease-out forwards;
+}
+@keyframes burst {
+  0% { transform:scale(0) translate(0,0); opacity:1; }
+  100% { transform:scale(1) translate(var(--tx),var(--ty)); opacity:0; }
+}
+
+/* ─── BOTTOM NAV ─── */
+.bottom-nav {
+  padding:10px 20px 30px;
+  display:flex; justify-content:space-around; align-items:center;
+  border-top:1px solid var(--rim);
+  flex-shrink:0;
+}
+
+.nav-tab {
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  cursor:pointer; padding:8px 16px; border-radius:16px; transition:all 0.2s;
+  position:relative;
+}
+.nav-tab:active { background:var(--panel); }
+
+.nav-ico { font-size:24px; opacity:0.3; transition:all 0.3s; }
+.nav-lbl { font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ghost); }
+.nav-tab.on .nav-ico { opacity:1; }
+.nav-tab.on .nav-lbl { color:var(--glow); }
+
+.nav-dot {
+  position:absolute; top:6px; right:10px;
+  width:8px; height:8px; border-radius:50%;
+  background:var(--hot); border:2px solid var(--void);
+}
+
+/* MATCH OVERLAY */
+.match-overlay {
+  position:absolute; inset:0; z-index:100;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity 0.4s;
+  backdrop-filter:blur(20px);
+  background:radial-gradient(ellipse at center, rgba(147,51,234,0.3) 0%, rgba(6,3,15,0.85) 70%);
+}
+.match-overlay.show { opacity:1; pointer-events:all; }
+
+.match-faces {
+  display:flex; align-items:center; gap:-10px; margin-bottom:28px; position:relative;
+}
+.m-face {
+  width:90px; height:90px; border-radius:50%;
+  border:3px solid var(--void);
+  display:flex; align-items:center; justify-content:center;
+  font-size:48px;
+  box-shadow:0 0 40px rgba(147,51,234,0.4);
+  animation:matchFace 0.5s cubic-bezier(0.175,0.885,0.32,1.275) both;
+}
+.m-face:nth-child(1) { background:radial-gradient(circle at 40% 35%, #E0C4FF, #9333EA); animation-delay:0.1s; }
+.m-face:nth-child(2) { 
+  background:radial-gradient(circle at 40% 35%, #FFD0D0, #FF6B6B);
+  margin-left:-20px; animation-delay:0.2s;
+}
+.m-heart {
+  position:absolute; bottom:-14px; left:50%; transform:translateX(-50%);
+  width:32px; height:32px; border-radius:50%;
+  background:linear-gradient(135deg,#9333EA,#FF6B6B);
+  display:flex; align-items:center; justify-content:center; font-size:16px;
+  animation:matchFace 0.4s cubic-bezier(0.175,0.885,0.32,1.275) 0.3s both;
+  box-shadow:0 4px 20px rgba(255,107,107,0.5);
+}
+
+@keyframes matchFace {
+  0% { transform:scale(0) rotate(-20deg); opacity:0; }
+  60% { transform:scale(1.1) rotate(5deg); }
+  100% { transform:scale(1) rotate(0); opacity:1; }
+}
+.m-face:nth-child(2) { animation: matchFace2 0.5s cubic-bezier(0.175,0.885,0.32,1.275) 0.2s both; }
+@keyframes matchFace2 {
+  0% { transform:scale(0) rotate(20deg) translateX(-50%); opacity:0; margin-left:-20px; }
+  60% { transform:scale(1.1) rotate(-5deg) translateX(0); margin-left:-20px; }
+  100% { transform:scale(1) rotate(0); margin-left:-20px; opacity:1; }
+}
+
+.match-word {
+  font-family:'Playfair Display',serif;
+  font-size:52px; font-weight:900; font-style:italic;
+  background:linear-gradient(135deg, #F5F0FF, #CE93D8 40%, #FF6B6B);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  margin-bottom:8px;
+  animation:fadeUp 0.4s ease 0.4s both;
+}
+.match-desc { font-size:14px; color:var(--dim); margin-bottom:40px; animation:fadeUp 0.4s ease 0.5s both; }
+.match-ctas { display:flex; gap:12px; width:100%; padding:0 36px; animation:fadeUp 0.4s ease 0.6s both; }
+
+/* ═══════════════════════════════════
+   SCREEN 8 — CHAT
+═══════════════════════════════════ */
+#s-chat { display:flex; flex-direction:column; }
+
+.chat-bar {
+  padding:50px 20px 16px;
+  display:flex; align-items:center; gap:14px;
+  border-bottom:1px solid var(--rim); flex-shrink:0;
+}
+
+.chat-av-wrap { position:relative; }
+.chat-av {
+  width:48px; height:48px; border-radius:50%;
+  background:radial-gradient(circle at 40% 35%, #E0C4FF, #9333EA);
+  display:flex; align-items:center; justify-content:center; font-size:26px;
+  border:2px solid rgba(206,147,216,0.4);
+}
+.chat-online {
+  position:absolute; bottom:1px; right:1px;
+  width:11px; height:11px; border-radius:50%;
+  background:#A8FF78; border:2px solid var(--void);
+}
+
+.chat-user { flex:1; }
+.cu-name { font-family:'Playfair Display',serif; font-size:20px; font-weight:700; color:var(--txt); }
+.cu-status { font-size:11px; color:#A8FF78; font-weight:500; margin-top:1px; }
+
+.safe-btn {
+  width:40px; height:40px; border-radius:13px;
+  background:rgba(168,255,120,0.08); border:1px solid rgba(168,255,120,0.2);
+  display:flex; align-items:center; justify-content:center; font-size:17px; cursor:pointer;
+}
+
+.chat-feed {
+  flex:1; padding:20px 18px; overflow-y:auto;
+  display:flex; flex-direction:column; gap:10px;
+}
+
+.bubble {
+  max-width:78%; padding:13px 18px; font-size:14px; line-height:1.6; font-weight:400;
+  animation: bubblePop 0.2s cubic-bezier(0.175,0.885,0.32,1.275) both;
+}
+
+@keyframes bubblePop {
+  0% { transform:scale(0.85); opacity:0; }
+  100% { transform:scale(1); opacity:1; }
+}
+
+.bubble.them {
+  background:var(--panel); border:1px solid var(--rim);
+  border-radius:20px 20px 20px 6px;
+  align-self:flex-start; color:var(--txt);
+}
+.bubble.me {
+  background:linear-gradient(135deg, #6B21A8, #9333EA);
+  border-radius:20px 20px 6px 20px;
+  align-self:flex-end; color:white;
+  box-shadow:0 4px 20px rgba(147,51,234,0.3);
+}
+
+.chat-floor {
+  padding:12px 16px 30px;
+  display:flex; gap:10px; align-items:center;
+  border-top:1px solid var(--rim);
+}
+
+.c-input {
+  flex:1; padding:15px 20px; border-radius:26px;
+  border:1px solid var(--rim); background:var(--panel);
+  color:var(--txt); font-family:'Syne',sans-serif; font-size:14px; outline:none;
+  transition:border-color 0.2s;
+}
+.c-input:focus { border-color:rgba(206,147,216,0.4); }
+.c-input::placeholder { color:var(--ghost); }
+
+.c-send {
+  width:48px; height:48px; border-radius:50%; border:none;
+  background:linear-gradient(135deg,#9333EA,#CE93D8);
+  color:white; font-size:18px; cursor:pointer; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 16px rgba(147,51,234,0.4);
+  transition:transform 0.15s;
+}
+.c-send:active { transform:scale(0.88); }
+
+/* ── UTIL ── */
+.mt16 { margin-top:16px; }
+.mt24 { margin-top:24px; }
+.mt28 { margin-top:28px; }
+.mt32 { margin-top:32px; }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- LIVING BACKGROUND -->
+  <div class="living-bg">
+    <div class="bg-blob"></div>
+    <div class="bg-blob"></div>
+    <div class="bg-blob"></div>
+  </div>
+  <div class="grain"></div>
+
+  <!-- ═══ WELCOME ═══ -->
+  <div class="screen active" id="s-welcome">
+    <div class="welcome-top">
+      <div class="aura-ring-wrap">
+        <div class="aura-ring ring-4"></div>
+        <div class="aura-ring ring-3"></div>
+        <div class="aura-ring ring-2"></div>
+        <div class="aura-ring ring-1"></div>
+        <div class="aura-core">✨</div>
+      </div>
+      <div class="logo-wordmark">Aura</div>
+      <div class="logo-sub">Every kind of love · One place</div>
+      <div class="welcome-manifesto">
+        The world is <strong>bigger</strong> than labels.<br>
+        Your love story starts <strong>here.</strong>
+      </div>
+    </div>
+    <div class="welcome-bottom">
+      <button class="btn-aura primary" onclick="go('s-signup')">Begin Your Journey ✦</button>
+      <button class="btn-aura ghost" onclick="go('s-main')">I already have an account</button>
+    </div>
+  </div>
+
+  <!-- ═══ SIGN UP ═══ -->
+  <div class="screen" id="s-signup">
+    <div style="padding:0 28px 40px; overflow-y:auto; flex:1; display:flex; flex-direction:column;">
+      <div class="top-row">
+        <div class="back-ico" onclick="go('s-welcome')">←</div>
+        <div class="step-pills">
+          <div class="pill on"></div>
+          <div class="pill"></div>
+          <div class="pill"></div>
+          <div class="pill"></div>
+        </div>
+      </div>
+      <div class="page-title">Create your<br><em>account</em></div>
+      <div class="page-hint">Join thousands already finding their people</div>
+
+      <div class="social-row">
+        <div class="social-tile" onclick="go('s-mode')">
+          <span style="font-size:18px">G</span> Google
+        </div>
+        <div class="social-tile" onclick="go('s-mode')">
+          <span style="font-size:18px">🍎</span> Apple
+        </div>
+      </div>
+
+      <div class="sep">or email</div>
+
+      <div class="field-wrap">
+        <label class="field-label">Email</label>
+        <input class="field" type="email" placeholder="your@email.com">
+      </div>
+      <div class="field-wrap">
+        <label class="field-label">Password</label>
+        <input class="field" type="password" placeholder="Create a strong password">
+      </div>
+      <button class="btn-aura primary mt24" onclick="go('s-mode')">Continue ✦</button>
+    </div>
+  </div>
+
+  <!-- ═══ MODE SELECT ═══ -->
+  <div class="screen" id="s-mode">
+    <div style="padding:0 24px 40px; overflow-y:auto; flex:1; display:flex; flex-direction:column;">
+      <div class="top-row">
+        <div class="back-ico" onclick="go('s-signup')">←</div>
+        <div class="step-pills">
+          <div class="pill done"></div>
+          <div class="pill on"></div>
+          <div class="pill"></div>
+          <div class="pill"></div>
+        </div>
+      </div>
+      <div class="page-title">Your<br><em>experience</em></div>
+      <div class="page-hint" style="margin-bottom:0">You can change this anytime in settings</div>
+
+      <div class="mode-arena">
+        <div class="mode-tile spark-tile" onclick="pickMode(this, '#4FC3F7', 's-profile')">
+          <div class="tile-top">
+            <div class="tile-icon">🔵</div>
+            <div class="tile-badge">Straight</div>
+          </div>
+          <div class="tile-name">Spark</div>
+          <div class="tile-desc">Classic, intuitive swipe dating. Clean, direct, powerful.</div>
+          <div class="tile-features">
+            <span class="t-feat">Swipe to match</span>
+            <span class="t-feat">Slow match mode</span>
+            <span class="t-feat">Date ideas</span>
+          </div>
+        </div>
+
+        <div class="mode-tile glow-tile" onclick="pickMode(this, '#CE93D8', 's-profile')">
+          <div class="tile-top">
+            <div class="tile-icon">🟣</div>
+            <div class="tile-badge">Queer</div>
+          </div>
+          <div class="tile-name">Glow</div>
+          <div class="tile-desc">Your community, your rules. Grid-based, proximity-aware, open.</div>
+          <div class="tile-features">
+            <span class="t-feat">Grid view</span>
+            <span class="t-feat">Nearby radar</span>
+            <span class="t-feat">Safe spaces</span>
+          </div>
+        </div>
+
+        <div class="mode-tile open-tile" onclick="pickMode(this, '#FFCC02', 's-profile')">
+          <div class="tile-top">
+            <div class="tile-icon">🌈</div>
+            <div class="tile-badge">Everyone</div>
+          </div>
+          <div class="tile-name">Open</div>
+          <div class="tile-desc">No labels, no limits. See everyone, connect with anyone.</div>
+          <div class="tile-features">
+            <span class="t-feat">All modes</span>
+            <span class="t-feat">Ally spaces</span>
+            <span class="t-feat">Cross community</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mode-safe mt16">🛡️ All modes have equal safety protection</div>
+    </div>
+  </div>
+
+  <!-- ═══ PROFILE BUILD ═══ -->
+  <div class="screen" id="s-profile">
+    <div style="padding:0 28px 40px; overflow-y:auto; flex:1; display:flex; flex-direction:column;">
+      <div class="top-row">
+        <div class="back-ico" onclick="go('s-mode')">←</div>
+        <div class="step-pills">
+          <div class="pill done"></div>
+          <div class="pill done"></div>
+          <div class="pill on"></div>
+          <div class="pill"></div>
+        </div>
+      </div>
+      <div class="page-title">Build your<br><em>profile</em></div>
+      <div class="page-hint">Add more anytime — start simple</div>
+
+      <div class="avatar-stage">
+        <div class="avatar-ring-wrap">
+          <div class="av-ring av-ring-3"></div>
+          <div class="av-ring av-ring-2"></div>
+          <div class="av-ring av-ring-1"></div>
+          <div class="av-core" id="av-core" onclick="animateAvatar()">
+            <div class="av-emoji" id="av-emoji">📸</div>
+            <div class="av-label">Add photo</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-wrap">
+        <label class="field-label">Your Name</label>
+        <input class="field" type="text" placeholder="What do people call you?">
+      </div>
+      <div class="field-wrap">
+        <label class="field-label">Age</label>
+        <input class="field" type="number" placeholder="Your age" style="width:50%">
+      </div>
+      <div class="field-wrap">
+        <label class="field-label">I identify as</label>
+        <div class="identity-chips">
+          <div class="id-chip" onclick="toggleChip(this)">Man</div>
+          <div class="id-chip" onclick="toggleChip(this)">Woman</div>
+          <div class="id-chip" onclick="toggleChip(this)">Non-binary</div>
+          <div class="id-chip" onclick="toggleChip(this)">Trans man</div>
+          <div class="id-chip" onclick="toggleChip(this)">Trans woman</div>
+          <div class="id-chip" onclick="toggleChip(this)">Genderfluid</div>
+          <div class="id-chip" onclick="toggleChip(this)">Write my own ✏️</div>
+        </div>
+      </div>
+      <div class="field-wrap mt16">
+        <label class="field-label">Location</label>
+        <input class="field" type="text" value="Nairobi, Kenya">
+      </div>
+      <button class="btn-aura primary mt24" onclick="go('s-vibe')">Continue ✦</button>
+    </div>
+  </div>
+
+  <!-- ═══ VIBE CHECK ═══ -->
+  <div class="screen" id="s-vibe">
+    <div style="padding:0 28px 40px; flex:1; display:flex; flex-direction:column;">
+      <div class="top-row">
+        <div class="back-ico" onclick="go('s-profile')">←</div>
+        <div class="step-pills">
+          <div class="pill done"></div>
+          <div class="pill done"></div>
+          <div class="pill done"></div>
+          <div class="pill on"></div>
+        </div>
+      </div>
+      <div class="page-title">What's your<br><em>vibe?</em></div>
+      <div class="page-hint">Select all that apply — fuels your matches</div>
+
+      <div class="vibe-mosaic">
+        <div class="vibe-brick" onclick="toggleVibe(this)">
+          <span class="v-emoji">💞</span>
+          <div class="v-text">
+            <div class="v-label">Something serious</div>
+            <div class="v-sub">Looking for a real connection</div>
+          </div>
+        </div>
+        <div class="vibe-brick" onclick="toggleVibe(this)">
+          <span class="v-emoji">✨</span>
+          <div class="v-label">Casual & fun</div>
+          <div class="v-sub">Keep it light</div>
+        </div>
+        <div class="vibe-brick" onclick="toggleVibe(this)">
+          <span class="v-emoji">👫</span>
+          <div class="v-label">New friends</div>
+          <div class="v-sub">Beyond romance</div>
+        </div>
+        <div class="vibe-brick" onclick="toggleVibe(this)">
+          <span class="v-emoji">🌍</span>
+          <div class="v-label">Community</div>
+          <div class="v-sub">Belong to something</div>
+        </div>
+        <div class="vibe-brick" onclick="toggleVibe(this)">
+          <span class="v-emoji">🤷</span>
+          <div class="v-label">Exploring</div>
+          <div class="v-sub">No pressure</div>
+        </div>
+        <div class="vibe-brick" onclick="toggleVibe(this)">
+          <span class="v-emoji">💫</span>
+          <div class="v-label">All of it</div>
+          <div class="v-sub">Open to anything</div>
+        </div>
+      </div>
+      <button class="btn-aura primary mt24" onclick="go('s-success')">Almost there ✦</button>
+    </div>
+  </div>
+
+  <!-- ═══ SUCCESS ═══ -->
+  <div class="screen" id="s-success">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 32px;">
+      <div class="success-ring-wrap">
+        <div class="s-ring s-ring-4"></div>
+        <div class="s-ring s-ring-3"></div>
+        <div class="s-ring s-ring-2"></div>
+        <div class="s-ring s-ring-1"></div>
+        <div class="s-core">🌟</div>
+      </div>
+      <div class="success-headline">Your Aura<br>is live.</div>
+      <div class="success-body">You're part of something beautiful now.<br>Your first matches are already waiting.</div>
+      <button class="btn-aura primary" style="width:100%" onclick="go('s-main')">Discover My Matches ✦</button>
+    </div>
+  </div>
+
+  <!-- ═══ MAIN APP ═══ -->
+  <div class="screen" id="s-main">
+    <div class="app-bar">
+      <div class="app-wordmark">Aura</div>
+      <div class="app-mode-pill" id="mode-pill">🟣 Glow</div>
+      <div class="hdr-btns">
+        <div class="hdr-btn" onclick="go('s-chat')">💬<div class="hdr-badge">3</div></div>
+        <div class="hdr-btn">⚙️</div>
+      </div>
+    </div>
+
+    <div class="discover-area">
+      <div class="profile-stage">
+
+        <!-- Queue cards behind -->
+        <div class="queue-cards">
+          <div class="q-card">
+            <div class="q-card-bg" style="background:linear-gradient(135deg,#1A3A2A,#0A1A12)"></div>
+            🧑🏿
+          </div>
+          <div class="q-card">
+            <div class="q-card-bg" style="background:linear-gradient(135deg,#3D1A1A,#1A0505)"></div>
+            👩🏾
+          </div>
+        </div>
+
+        <!-- Featured profile -->
+        <div class="featured-profile" id="fp"
+          ontouchstart="ts(event)" ontouchmove="tm(event)" ontouchend="te(event)">
+
+          <div class="fp-aura"></div>
+
+          <div class="fp-like-stamp" id="like-stamp">VIBE ✓</div>
+          <div class="fp-nope-stamp" id="nope-stamp">PASS ✕</div>
+
+          <div class="fp-compatibility">
+            <div class="compat-num" id="compat-num">87%</div>
+            <div class="compat-label">Aura Match</div>
+          </div>
+
+          <div class="fp-photo" id="fp-photo">
+            <div class="fp-photo-bg" id="fp-bg"></div>
+            <div class="fp-emoji-big" id="fp-emoji">👩🏽</div>
+            <div class="fp-gradient"></div>
+          </div>
+
+          <div class="fp-info">
+            <div class="fp-name-row">
+              <div class="fp-name" id="fp-name">Zara</div>
+              <div class="fp-age" id="fp-age">24</div>
+            </div>
+            <div class="fp-location" id="fp-loc">📍 Kilimani · 2km away · Active now</div>
+            <div class="fp-tags" id="fp-tags">
+              <span class="fp-tag">💞 Serious vibes</span>
+              <span class="fp-tag">☕ Coffee addict</span>
+              <span class="fp-tag">🎨 Creative soul</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="action-strip">
+      <button class="act-btn act-boost" onclick="swipe('left')">✕</button>
+      <button class="act-btn act-pass" onclick="swipe('left')">↩</button>
+      <button class="act-btn act-like" id="like-btn" onclick="swipe('right')">💜</button>
+      <button class="act-btn act-star" onclick="showMatch()">⭐</button>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-tab on">
+        <div class="nav-ico">🔥</div>
+        <div class="nav-lbl">Discover</div>
+      </div>
+      <div class="nav-tab" onclick="go('s-chat')">
+        <div class="nav-ico">💬</div>
+        <div class="nav-lbl">Matches</div>
+        <div class="nav-dot"></div>
+      </div>
+      <div class="nav-tab">
+        <div class="nav-ico">✦</div>
+        <div class="nav-lbl">Spark Rooms</div>
+      </div>
+      <div class="nav-tab">
+        <div class="nav-ico">🌍</div>
+        <div class="nav-lbl">Community</div>
+      </div>
+      <div class="nav-tab">
+        <div class="nav-ico">👤</div>
+        <div class="nav-lbl">Profile</div>
+      </div>
+    </div>
+
+    <!-- MATCH OVERLAY -->
+    <div class="match-overlay" id="match-overlay">
+      <div class="match-faces">
+        <div class="m-face">🧑🏽</div>
+        <div class="m-face">👩🏽</div>
+        <div class="m-heart">💜</div>
+      </div>
+      <div class="match-word mt32">It's a Match!</div>
+      <div class="match-desc">You and Zara both liked each other</div>
+      <div class="match-ctas">
+        <button class="btn-aura ghost" style="flex:1;padding:14px" onclick="closeMatch()">Keep Swiping</button>
+        <button class="btn-aura primary" style="flex:1;margin:0;padding:14px" onclick="goChat()">Say Hello 👋</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CHAT ═══ -->
+  <div class="screen" id="s-chat">
+    <div class="chat-bar">
+      <div class="back-ico" onclick="go('s-main')" style="margin-right:4px">←</div>
+      <div class="chat-av-wrap">
+        <div class="chat-av">👩🏽</div>
+        <div class="chat-online"></div>
+      </div>
+      <div class="chat-user">
+        <div class="cu-name">Zara</div>
+        <div class="cu-status">● Active now</div>
+      </div>
+      <div class="safe-btn" title="Safety check-in">🛡️</div>
+    </div>
+
+    <div class="chat-feed" id="chat-feed">
+      <div class="bubble them">Hey! I saw we matched 💜 your profile genuinely stood out</div>
+      <div class="bubble me">Thank you! I loved your creative energy ✨ what do you make?</div>
+      <div class="bubble them">I'm a designer — branding mostly. What are you working on?</div>
+      <div class="bubble me">Something that's going to change dating in Africa 👀</div>
+      <div class="bubble them">No way 😭 tell me everything! What's it called?</div>
+      <div class="bubble me">You're literally using it right now 😄</div>
+      <div class="bubble them">WAIT... this is Aura?? I love this app already 🌟</div>
+    </div>
+
+    <div class="chat-floor">
+      <input class="c-input" id="c-input" placeholder="Say something genuine...">
+      <button class="c-send" onclick="sendMsg()">➤</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── STATE ──
+let cur = 's-welcome';
+let txStart = 0, dragging = false, modeColor = '#CE93D8';
+let swiped = false;
+
+const profiles = [
+  { name:'Zara', age:24, loc:'Kilimani · 2km away · Active now', tags:['💞 Serious vibes','☕ Coffee addict','🎨 Creative soul'], emoji:'👩🏽', compat:'87%', bg:'linear-gradient(135deg,#2D1B69,#4A1B6D,#1A0A2E)' },
+  { name:'Kofi', age:29, loc:'Westlands · 5km away · Active 2h ago', tags:['✨ Casual vibes','🍔 Serious foodie','🎵 Music head'], emoji:'🧑🏿', compat:'73%', bg:'linear-gradient(135deg,#1A3A2A,#0F2A1F,#0A1A12)' },
+  { name:'Amara', age:26, loc:'CBD · 3km away · Active now', tags:['💫 Open to all','🌍 World traveller','📚 Deep thinker'], emoji:'👩🏾', compat:'91%', bg:'linear-gradient(135deg,#3D1A3A,#2A0A2A,#1A0A1A)' },
+];
+let pIdx = 0;
+
+// ── NAVIGATION ──
+function go(id) {
+  const prev = document.getElementById(cur);
+  const next = document.getElementById(id);
+  prev.classList.add('exit');
+  setTimeout(() => { prev.classList.remove('active','exit'); next.classList.add('active'); cur = id; }, 450);
+}
+
+// ── MODE PICK ──
+function pickMode(el, color, next) {
+  document.querySelectorAll('.mode-tile').forEach(t => t.classList.remove('picked'));
+  el.classList.add('picked');
+  modeColor = color;
+  document.documentElement.style.setProperty('--mode-color', color);
+  document.documentElement.style.setProperty('--mode-glow', color + '44');
+  setTimeout(() => go(next), 320);
+}
+
+// ── TOGGLES ──
+function toggleChip(el) { el.classList.toggle('on'); }
+function toggleVibe(el) { el.classList.toggle('on'); }
+
+// ── AVATAR ──
+function animateAvatar() {
+  const emojis = ['🧑🏽','😊','🤩','✨'];
+  const e = document.getElementById('av-emoji');
+  e.style.transform = 'scale(0)';
+  setTimeout(() => {
+    e.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    e.style.transition = 'transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275)';
+    e.style.transform = 'scale(1)';
+    document.querySelector('.av-label').textContent = 'Looking good!';
+  }, 150);
+}
+
+// ── SWIPE LOGIC ──
+function loadProfile(i) {
+  const p = profiles[i % profiles.length];
+  document.getElementById('fp-name').textContent = p.name;
+  document.getElementById('fp-age').textContent = p.age;
+  document.getElementById('fp-loc').textContent = '📍 ' + p.loc;
+  document.getElementById('fp-emoji').textContent = p.emoji;
+  document.getElementById('fp-bg').style.background = p.bg;
+  document.getElementById('compat-num').textContent = p.compat;
+  const tags = document.getElementById('fp-tags');
+  tags.innerHTML = p.tags.map(t => `<span class="fp-tag">${t}</span>`).join('');
+}
+
+function swipe(dir) {
+  if (swiped) return;
+  const fp = document.getElementById('fp');
+  fp.style.transition = 'transform 0.45s cubic-bezier(0.4,0,0.2,1), opacity 0.45s ease';
+  fp.style.transform = dir === 'right' ? 'translateX(140%) rotate(18deg)' : 'translateX(-140%) rotate(-18deg)';
+  fp.style.opacity = '0';
+  burst(document.getElementById('like-btn'), dir === 'right' ? '#CE93D8' : '#FF6B6B');
+  if (dir === 'right') setTimeout(showMatch, 300);
+  setTimeout(() => {
+    pIdx++;
+    loadProfile(pIdx);
+    fp.style.transition = 'none';
+    fp.style.transform = 'scale(0.9) translateY(20px)';
+    fp.style.opacity = '0';
+    setTimeout(() => {
+      fp.style.transition = 'transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275), opacity 0.4s ease';
+      fp.style.transform = 'none';
+      fp.style.opacity = '1';
+    }, 50);
+    swiped = false;
+  }, 500);
+  swiped = true;
+}
+
+// ── TOUCH SWIPE ──
+function ts(e) { txStart = e.touches[0].clientX; dragging = true; }
+function tm(e) {
+  if (!dragging) return;
+  const dx = e.touches[0].clientX - txStart;
+  const fp = document.getElementById('fp');
+  fp.style.transition = 'none';
+  fp.style.transform = `translateX(${dx * 0.6}px) rotate(${dx * 0.04}deg)`;
+  const ls = document.getElementById('like-stamp'), ns = document.getElementById('nope-stamp');
+  if (dx > 40) { ls.style.opacity = Math.min(1,(dx-40)/80); ns.style.opacity = 0; }
+  else if (dx < -40) { ns.style.opacity = Math.min(1,(-dx-40)/80); ls.style.opacity = 0; }
+  else { ls.style.opacity = 0; ns.style.opacity = 0; }
+}
+function te(e) {
+  dragging = false;
+  const dx = e.changedTouches[0].clientX - txStart;
+  document.getElementById('like-stamp').style.opacity = 0;
+  document.getElementById('nope-stamp').style.opacity = 0;
+  if (Math.abs(dx) > 90) swipe(dx > 0 ? 'right' : 'left');
+  else {
+    const fp = document.getElementById('fp');
+    fp.style.transition = 'transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275)';
+    fp.style.transform = 'none';
+  }
+}
+
+// ── MATCH ──
+function showMatch() { document.getElementById('match-overlay').classList.add('show'); }
+function closeMatch() {
+  document.getElementById('match-overlay').classList.remove('show');
+}
+function goChat() {
+  document.getElementById('match-overlay').classList.remove('show');
+  go('s-chat');
+}
+
+// ── PARTICLE BURST ──
+function burst(el, color) {
+  const rect = el.getBoundingClientRect();
+  const phone = document.querySelector('.phone').getBoundingClientRect();
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = (i / 8) * 360;
+    const dist = 30 + Math.random() * 30;
+    const rad = angle * Math.PI / 180;
+    p.style.cssText = `
+      width:6px; height:6px; background:${color};
+      left:${rect.left - phone.left + rect.width/2}px;
+      top:${rect.top - phone.top + rect.height/2}px;
+      --tx:${Math.cos(rad)*dist}px; --ty:${Math.sin(rad)*dist}px;
+      z-index:999;
+    `;
+    document.querySelector('.phone').appendChild(p);
+    setTimeout(() => p.remove(), 500);
+  }
+}
+
+// ── CHAT ──
+const replies = [
+  "Honestly that's the coolest thing I've heard today 😭",
+  "You have to tell me more about this 👀",
+  "I'm genuinely obsessed with this idea ✨",
+  "Okay wait — are you hiring? 😄",
+  "The world needs this so badly 💜",
+  "I knew there was something special about your aura 🌟"
+];
+let replyIdx = 0;
+
+function sendMsg() {
+  const inp = document.getElementById('c-input');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  const feed = document.getElementById('chat-feed');
+  const b = document.createElement('div');
+  b.className = 'bubble me'; b.textContent = txt;
+  feed.appendChild(b); inp.value = '';
+  feed.scrollTop = feed.scrollHeight;
+  setTimeout(() => {
+    const r = document.createElement('div');
+    r.className = 'bubble them';
+    r.textContent = replies[replyIdx % replies.length]; replyIdx++;
+    feed.appendChild(r);
+    feed.scrollTop = feed.scrollHeight;
+  }, 1000 + Math.random() * 600);
+}
+
+document.getElementById('c-input').addEventListener('keydown', e => { if(e.key==='Enter') sendMsg(); });
+
+// init
+loadProfile(0);
+</script>
+</body>
+</html>
